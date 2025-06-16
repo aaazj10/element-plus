@@ -50,25 +50,27 @@
       <slot />
     </div>
     <ul v-if="indicatorPosition !== 'none'" :class="indicatorsClasses">
-      <li
-        v-for="(item, index) in items"
-        v-show="isTwoLengthShow(index)"
-        :key="index"
-        :class="[
-          ns.e('indicator'),
-          ns.em('indicator', direction),
-          ns.is('active', index === activeIndex),
-        ]"
-        @mouseenter="throttledIndicatorHover(index)"
-        @click.stop="handleIndicatorClick(index)"
-      >
-        <button
-          :class="ns.e('button')"
-          :aria-label="t('el.carousel.indicator', { index: index + 1 })"
+      <items-sorter :sort="sortItems">
+        <li
+          v-for="(item, index) in items"
+          v-show="isTwoLengthShow(index)"
+          :key="index"
+          :class="[
+            ns.e('indicator'),
+            ns.em('indicator', direction),
+            ns.is('active', index === activeIndex),
+          ]"
+          @mouseenter="throttledIndicatorHover(index)"
+          @click.stop="handleIndicatorClick(index)"
         >
-          <span v-if="hasLabel">{{ item.props.label }}</span>
-        </button>
-      </li>
+          <button
+            :class="ns.e('button')"
+            :aria-label="t('el.carousel.indicator', { index: index + 1 })"
+          >
+            <span v-if="hasLabel">{{ item.props.label }}</span>
+          </button>
+        </li>
+      </items-sorter>
     </ul>
     <svg
       v-if="props.motionBlur"
@@ -123,6 +125,8 @@ const {
   next,
   PlaceholderItem,
   isTwoLengthShow,
+  sortItems,
+  ItemsSorter,
   throttledArrowClick,
   throttledIndicatorHover,
 } = useCarousel(props, emit, COMPONENT_NAME)

@@ -1,7 +1,7 @@
 import { isVNode, shallowRef } from 'vue'
 import { flattedChildren } from '@element-plus/utils'
 
-import type { ComponentInternalInstance, VNode } from 'vue'
+import type { ComponentInternalInstance, Slots, VNode } from 'vue'
 
 const getOrderedChildren = <T>(
   vm: ComponentInternalInstance,
@@ -22,13 +22,14 @@ export const useOrderedChildren = <T extends { uid: number }>(
   vm: ComponentInternalInstance,
   childComponentName: string
 ) => {
+  let shouldSortChildren = false
   const children: Record<number, T> = {}
   const orderedChildren = shallowRef<T[]>([])
 
-  // TODO: split into two functions: addChild and sortChildren
   const addChild = (child: T) => {
     children[child.uid] = child
-    orderedChildren.value = getOrderedChildren(vm, childComponentName, children)
+    orderedChildren.value = [...orderedChildren.value, child]
+    if (vm.isMounted) shouldSortChildren = true
   }
   const removeChild = (uid: number) => {
     delete children[uid]
@@ -36,10 +37,25 @@ export const useOrderedChildren = <T extends { uid: number }>(
       (children) => children.uid !== uid
     )
   }
+  const sortChildren = () => {
+    if (!shouldSortChildren) return
+
+    orderedChildren.value = getOrderedChildren(vm, childComponentName, children)
+    shouldSortChildren = false
+  }
 
   return {
     children: orderedChildren,
     addChild,
     removeChild,
+    sortChildren,
+    ChildrenSorter: (
+      props: { sort: typeof sortChildren },
+      { slots }: { slots: Slots }
+    ) => {
+      props.sort()
+
+      return slots.default?.()
+    },
   }
 }

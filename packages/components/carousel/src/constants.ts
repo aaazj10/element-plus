@@ -1,4 +1,4 @@
-import type { InjectionKey, Ref } from 'vue'
+import type { InjectionKey, Ref, Slots } from 'vue'
 import type { CarouselItemProps } from './carousel-item'
 
 export type CarouselItemStates = {
@@ -27,6 +27,11 @@ export type CarouselContext = {
   cardScale: number
   addItem: (item: CarouselItemContext) => void
   removeItem: (uid: number) => void
+  sortItems: () => void
+  ItemsSorter: (
+    props: { sort: () => void },
+    { slots }: { slots: Slots }
+  ) => void
   setActiveItem: (index: number) => void
   setContainerHeight: (height: number) => void
 }

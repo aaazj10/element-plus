@@ -33,6 +33,8 @@ export const useCarousel = (
     children: items,
     addChild: addItem,
     removeChild: removeItem,
+    sortChildren: sortItems,
+    ChildrenSorter: ItemsSorter,
   } = useOrderedChildren<CarouselItemContext>(
     getCurrentInstance()!,
     CAROUSEL_ITEM_NAME
@@ -308,6 +310,8 @@ export const useCarousel = (
     cardScale: props.cardScale,
     addItem,
     removeItem,
+    sortItems,
+    ItemsSorter,
     setActiveItem,
     setContainerHeight,
   })
@@ -333,6 +337,8 @@ export const useCarousel = (
     next,
     PlaceholderItem,
     isTwoLengthShow,
+    sortItems,
+    ItemsSorter,
     throttledArrowClick,
     throttledIndicatorHover,
   }
