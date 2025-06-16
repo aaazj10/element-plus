@@ -11,7 +11,7 @@ export interface TreeData extends TreeNode {
   loaded?: boolean
 }
 
-function useTree<T>(watcherData: WatcherPropsData<T>) {
+function useTree<T extends Record<string, any>>(watcherData: WatcherPropsData<T>) {
   const expandRowKeys = ref<string[]>([])
   const treeData = ref<Record<string, TreeData>>({})
   const indent = ref(16)
@@ -50,7 +50,7 @@ function useTree<T>(watcherData: WatcherPropsData<T>) {
     return res
   })
 
-  const normalize = (data: any) => {
+  const normalize = (data: T[]) => {
     const rowKey = watcherData.rowKey.value
     const res: Record<string, TreeData> = {}
     walkTreeNode(
