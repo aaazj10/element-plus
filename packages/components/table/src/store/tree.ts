@@ -11,7 +11,9 @@ export interface TreeData extends TreeNode {
   loaded?: boolean
 }
 
-function useTree<T extends Record<string, any>>(watcherData: WatcherPropsData<T>) {
+function useTree<T extends Record<string, any>>(
+  watcherData: WatcherPropsData<T>
+) {
   const expandRowKeys = ref<string[]>([])
   const treeData = ref<Record<string, TreeData>>({})
   const indent = ref(16)
@@ -36,12 +38,11 @@ function useTree<T extends Record<string, any>>(watcherData: WatcherPropsData<T>
         const item: typeof res[number] = { children: [] }
         lazyTreeNodeMap.value[key].forEach((row) => {
           const currentRowKey = getRowIdentity(row, rowKey)
-          item.children.push(currentRowKey)
-          if (
-            row[lazyColumnIdentifier.value as keyof T] &&
-            !res[currentRowKey]
-          ) {
-            res[currentRowKey] = { children: [] }
+          if (currentRowKey) {
+            item.children.push(currentRowKey)
+            if (row[lazyColumnIdentifier.value] && !res[currentRowKey]) {
+              res[currentRowKey] = { children: [] }
+            }
           }
         })
         res[key] = item
@@ -55,11 +56,11 @@ function useTree<T extends Record<string, any>>(watcherData: WatcherPropsData<T>
     const res: Record<string, TreeData> = {}
     walkTreeNode(
       data,
-      (parent: any, children: T, level: number) => {
+      (parent: any, children: T | null, level: number) => {
         const parentId = getRowIdentity(parent, rowKey)
         if (isArray(children)) {
           res[parentId] = {
-            children: children.map((row) => getRowIdentity(row, rowKey)),
+            children: children.map((row) => getRowIdentity(row, rowKey)!),
             level,
           }
         } else if (lazy.value) {
@@ -77,11 +78,11 @@ function useTree<T extends Record<string, any>>(watcherData: WatcherPropsData<T>
     return res
   }
 
-  //instance.store?.states.defaultExpandAll.value
   const updateTreeData = (
     ifChangeExpandRowKeys = false,
-    ifExpandAll: boolean = false
+    ifExpandAll?: boolean //=
   ): void => {
+    ifExpandAll ||= instance.store?.states.defaultExpandAll.value
     const nested = normalizedData.value
     const normalizedLazyNode_ = normalizedLazyNode.value
     const keys = Object.keys(nested)
