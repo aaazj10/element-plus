@@ -1,7 +1,7 @@
-import { isVNode, shallowRef } from 'vue'
+import { isVNode, shallowRef, h } from 'vue'
 import { flattedChildren } from '@element-plus/utils'
 
-import type { ComponentInternalInstance, Slots, VNode } from 'vue'
+import type { ComponentInternalInstance, VNode } from 'vue'
 
 const getOrderedChildren = <T>(
   vm: ComponentInternalInstance,
@@ -22,40 +22,50 @@ export const useOrderedChildren = <T extends { uid: number }>(
   vm: ComponentInternalInstance,
   childComponentName: string
 ) => {
-  let shouldSortChildren = false
-  const children: Record<number, T> = {}
+  const children = shallowRef<T[]>([])
   const orderedChildren = shallowRef<T[]>([])
 
   const addChild = (child: T) => {
-    children[child.uid] = child
-    orderedChildren.value = [...orderedChildren.value, child]
-    if (vm.isMounted) shouldSortChildren = true
+    children.value.push(child)
   }
+
   const removeChild = (uid: number) => {
-    delete children[uid]
-    orderedChildren.value = orderedChildren.value.filter(
-      (children) => children.uid !== uid
+    const index = children.value.findIndex((child) => child.uid === uid)
+    children.value.splice(index, 1)
+  }
+
+  const sortChildren = () => {
+    orderedChildren.value = getOrderedChildren(
+      vm,
+      childComponentName,
+      Object.fromEntries(children.value.map((child) => [child.uid, child]))
     )
   }
-  const sortChildren = () => {
-    if (!shouldSortChildren) return
 
-    orderedChildren.value = getOrderedChildren(vm, childComponentName, children)
-    shouldSortChildren = false
+  const TestWrapper = (
+    _: {},
+    { slots }: { slots: { default?: () => VNode } }
+  ) => {
+    return slots.default ? slots.default() : null
+  }
+
+  const ChildrenSorter = (
+    _: {},
+    { slots }: { slots: { default?: () => VNode } }
+  ) => {
+    sortChildren()
+
+    return h(TestWrapper, null, {
+      default: () => {
+        return slots.default ? slots.default() : null
+      },
+    })
   }
 
   return {
     children: orderedChildren,
     addChild,
     removeChild,
-    sortChildren,
-    ChildrenSorter: (
-      props: { sort: typeof sortChildren },
-      { slots }: { slots: Slots }
-    ) => {
-      props.sort()
-
-      return slots.default?.()
-    },
+    ChildrenSorter,
   }
 }

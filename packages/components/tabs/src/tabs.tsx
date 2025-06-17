@@ -23,10 +23,10 @@ import { useNamespace, useOrderedChildren } from '@element-plus/hooks'
 import { tabsRootContextKey } from './constants'
 import TabNav from './tab-nav'
 
+import type { ExtractPropTypes } from 'vue'
+import type { Awaitable } from '@element-plus/utils'
 import type { TabNavInstance } from './tab-nav'
 import type { TabsPaneContext } from './constants'
-import type { ExtractPropTypes, FunctionalComponent, VNode } from 'vue'
-import type { Awaitable } from '@element-plus/utils'
 
 export type TabPaneName = string | number
 
@@ -112,8 +112,9 @@ const Tabs = defineComponent({
 
     const {
       children: panes,
-      addChild: sortPane,
+      addChild: registerPane,
       removeChild: unregisterPane,
+      ChildrenSorter: PanesSorter,
     } = useOrderedChildren<TabsPaneContext>(getCurrentInstance()!, 'ElTabPane')
 
     const nav$ = ref<TabNavInstance>()
@@ -179,10 +180,7 @@ const Tabs = defineComponent({
     provide(tabsRootContextKey, {
       props,
       currentName,
-      registerPane: (pane: TabsPaneContext) => {
-        panes.value.push(pane)
-      },
-      sortPane,
+      registerPane,
       unregisterPane,
     })
 
@@ -190,11 +188,7 @@ const Tabs = defineComponent({
       currentName,
       tabNavRef: nav$,
     })
-    const TabNavRenderer: FunctionalComponent<{ render: () => VNode }> = ({
-      render,
-    }) => {
-      return render()
-    }
+
     return () => {
       const addSlot = slots['add-icon']
       const newButton =
@@ -229,10 +223,9 @@ const Tabs = defineComponent({
             ns.is(props.tabPosition),
           ]}
         >
-          <TabNavRenderer
-            render={() => {
-              const hasLabelSlot = panes.value.some((pane) => pane.slots.label)
-              return createVNode(
+          <PanesSorter>
+            {() =>
+              createVNode(
                 TabNav,
                 {
                   ref: nav$,
@@ -244,10 +237,10 @@ const Tabs = defineComponent({
                   onTabClick: handleTabClick,
                   onTabRemove: handleTabRemove,
                 },
-                { $stable: !hasLabelSlot }
+                { $stable: !panes.value.some((pane) => pane.slots.label) }
               )
-            }}
-          />
+            }
+          </PanesSorter>
           {newButton}
         </div>
       )
