@@ -1,4 +1,4 @@
-import { isVNode, shallowRef, h } from 'vue'
+import { isVNode, shallowRef, h, triggerRef } from 'vue'
 import { flattedChildren } from '@element-plus/utils'
 
 import type { ComponentInternalInstance, VNode } from 'vue'
@@ -22,41 +22,42 @@ export const useOrderedChildren = <T extends { uid: number }>(
   vm: ComponentInternalInstance,
   childComponentName: string
 ) => {
-  const children = shallowRef<T[]>([])
+  const children = shallowRef<Record<number, T>>({})
   const orderedChildren = shallowRef<T[]>([])
 
+  const onMoved = () => {
+    triggerRef(children)
+  }
+
   const addChild = (child: T) => {
-    children.value.push(child)
+    children.value[child.uid] = child
+    triggerRef(children)
   }
 
   const removeChild = (uid: number) => {
-    const index = children.value.findIndex((child) => child.uid === uid)
-    children.value.splice(index, 1)
+    delete children.value[uid]
+    triggerRef(children)
   }
 
   const sortChildren = () => {
     orderedChildren.value = getOrderedChildren(
       vm,
       childComponentName,
-      Object.fromEntries(children.value.map((child) => [child.uid, child]))
+      children.value
     )
   }
 
-  const TestWrapper = (
-    _: {},
-    { slots }: { slots: { default?: () => VNode } }
-  ) => {
-    return slots.default ? slots.default() : null
+  const EffectIsolation = (props: { render: any }) => {
+    return props.render()
   }
-
   const ChildrenSorter = (
     _: {},
     { slots }: { slots: { default?: () => VNode } }
   ) => {
     sortChildren()
 
-    return h(TestWrapper, null, {
-      default: () => {
+    return h(EffectIsolation, {
+      render: () => {
         return slots.default ? slots.default() : null
       },
     })
